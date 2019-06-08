@@ -239,7 +239,7 @@ class LayeredModel(model.Model):
     ### All the diagnostic stuff follows. ###
     def _calc_cfl(self):
         return np.abs(
-            np.hstack([self.u + self.Ubg[:,np.newaxis,np.newaxis], self.v])
+            np.hstack([self.u + self.Ubg[:,np.newaxis], self.v])
         ).max()*self.dt/self.dx
 
     # calculate KE: this has units of m^2 s^{-2}
@@ -310,11 +310,15 @@ class LayeredModel(model.Model):
 
         self.add_diagnostic('APEgenspec',
                     description='the spectrum of the rate of generation of available potential energy',
+#                     function =(lambda self: (self.Hi[:,np.newaxis,np.newaxis]*
+#                                 (self.Ubg[:,np.newaxis,np.newaxis]*self.k +
+#                                  self.Vbg[:,np.newaxis,np.newaxis]*self.l)*
+#                                 (1j*self.ph.conj()*self.Sph).real).sum(axis=0)/self.H))
                     function =(lambda self: (self.Hi[:,np.newaxis,np.newaxis]*
-                                (self.Ubg[:,np.newaxis,np.newaxis]*self.k +
+                                (self.Ubg[:,:,np.newaxis]*self.k[np.newaxis,:,:] +
                                  self.Vbg[:,np.newaxis,np.newaxis]*self.l)*
                                 (1j*self.ph.conj()*self.Sph).real).sum(axis=0)/self.H))
-
+                                
         self.add_diagnostic('ENSflux',
                  description='barotropic enstrophy flux',
                  function = (lambda self: (-self.Hi[:,np.newaxis,np.newaxis]*
