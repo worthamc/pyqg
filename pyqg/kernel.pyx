@@ -39,6 +39,8 @@ cdef class PseudoSpectralKernel:
     cdef DTYPE_real_t [:, :, :] q
     cdef DTYPE_com_t [:, :, :] qh
     cdef DTYPE_com_t [:, :, :] Qh
+    # bottom topography
+    cdef DTYPE_real_t [:, :, :] hb
     # streamfunction
     cdef DTYPE_com_t [:, :, :] ph
     cdef DTYPE_com_t [:, :, :] Ph
@@ -130,6 +132,9 @@ cdef class PseudoSpectralKernel:
         self.qh = qh
         Qh = self._empty_com()
         self.Qh = Qh
+        
+        hb = self._empty_real()
+        self.hb = hb
 
         ph = self._empty_com()
         self.ph = ph
@@ -341,8 +346,8 @@ cdef class PseudoSpectralKernel:
                       chunksize=self.chunksize,
                       num_threads=self.num_threads):
                 for i in range(self.nx):
-                    self.uq[k,j,i] = (self.u[k,j,i]+self.Ubg[k,j]) * self.q[k,j,i]
-                    self.vq[k,j,i] = self.v[k,j,i] * self.q[k,j,i]
+                    self.uq[k,j,i] = (self.u[k,j,i]+self.Ubg[k,j]) * (self.q[k,j,i]+self.f*self.hb[k,j,i]/self.Hi[-1])
+                    self.vq[k,j,i] = self.v[k,j,i] * (self.q[k,j,i]+self.f*self.hb[k,j,i]/self.Hi[-1])
 
         # transform to get spectral advective flux
         with gil:
@@ -522,6 +527,11 @@ cdef class PseudoSpectralKernel:
             self.ifft_qh_to_q()
             # input might have been destroyed, have to re-assign
             self.qh[:] = b_view
+    property hb:
+        def __get__(self):
+            return np.asarray(self.hb)
+        def __set__(self, np.ndarray[DTYPE_real_t, ndim=3] hb):
+            self.hb = hb
     property dqhdt:
         def __get__(self):
             return np.asarray(self.dqhdt)

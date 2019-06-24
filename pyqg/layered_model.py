@@ -79,6 +79,7 @@ class LayeredModel(model.Model):
         H = None,                   # layer thickness
         U=None,                     # zonal base state flow
         V=None,                     # meridional base state flow
+        hbot=0.,						# bottom topography
         rho = None,
         delta = None,
         **kwargs
@@ -104,6 +105,8 @@ class LayeredModel(model.Model):
             Base state meridional velocity. Units: meters s :sup:`-1`
         H : array of size nz
             Layer thickness. Units: meters
+        hbot : scalar *or* array of size ny by nx
+        	 bottom topographic height.  Units: meters
         rho: array of size nz.
             Layer density. Units: kilograms meters :sup:`-3`
 
@@ -117,6 +120,7 @@ class LayeredModel(model.Model):
         self.U = np.array(U)
         self.Vbg = np.array(V)
         self.Hi = np.array(H)
+        self.hbot = np.array(hbot)
         self.rhoi = np.array(rho)
 
         super(LayeredModel, self).__init__(nz=nz, **kwargs)
@@ -162,14 +166,16 @@ class LayeredModel(model.Model):
                     self.S[i,i+1] = self.f2/self.Hi[i]/self.gpi[i]
 
     def _initialize_background(self):
-        """Set up background state (zonal flow and PV gradients)."""
+        """Set up background state (zonal flow and PV gradients and topography)."""
 
         self.H = self.Hi.sum()
         if np.asarray(self.U).ndim == 2:
             self.Ubg = self.U * np.ones((self.ny))
         else:
             self.Ubg = np.expand_dims(self.U,axis=1) * np.ones((self.ny))
-
+             
+        # topography
+       	self.hb[-1,:,:] = self.hb[-1,:,:] + self.hbot
 
         if not (self.nz==2):
             self.gpi = self.g*(self.rhoi[1:]-self.rhoi[:-1])/self.rhoi[:-1]
@@ -191,10 +197,14 @@ class LayeredModel(model.Model):
             assert self.Vbg.size == self.nz, self.logger.error('size of Vbg does not' +
                      'match number of vertical levels nz')
 
+            assert self.hb.size == self.nz * self.ny * self.nx, self.logger.error('size of hb does not' +
+                     'match nz by ny by nx')
+
+            assert self.hb.max() < self.Hi[-1]/3., self.logger.error('QG model assumes hb << H_N') 
+
         else:
             self.f2gpi = np.array(self.rd**-2 *
                 (self.Hi[0]*self.Hi[1])/self.H)[np.newaxis]
-
 
         self._initialize_stretching_matrix()
 
