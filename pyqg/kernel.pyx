@@ -39,8 +39,10 @@ cdef class PseudoSpectralKernel:
     cdef DTYPE_real_t [:, :, :] q
     cdef DTYPE_com_t [:, :, :] qh
     cdef DTYPE_com_t [:, :, :] Qh
-    # bottom topography
+    # layer thickness and bottom topography
+    cdef DTYPE_real_t [:] Hi
     cdef DTYPE_real_t [:, :, :] hb
+    cdef DTYPE_real_t f
     # streamfunction
     cdef DTYPE_com_t [:, :, :] ph
     cdef DTYPE_com_t [:, :, :] Ph
@@ -135,7 +137,9 @@ cdef class PseudoSpectralKernel:
         
         hb = self._empty_real()
         self.hb = hb
-
+    
+        self.f = 0.0
+        
         ph = self._empty_com()
         self.ph = ph
 
@@ -346,8 +350,8 @@ cdef class PseudoSpectralKernel:
                       chunksize=self.chunksize,
                       num_threads=self.num_threads):
                 for i in range(self.nx):
-                    self.uq[k,j,i] = (self.u[k,j,i]+self.Ubg[k,j]) * (self.q[k,j,i]+self.f*self.hb[k,j,i]/self.Hi[-1])
-                    self.vq[k,j,i] = self.v[k,j,i] * (self.q[k,j,i]+self.f*self.hb[k,j,i]/self.Hi[-1])
+                    self.uq[k,j,i] = (self.u[k,j,i]+self.Ubg[k,j]) * (self.q[k,j,i]+self.f*self.hb[k,j,i]/self.Hi[k])
+                    self.vq[k,j,i] = self.v[k,j,i] * (self.q[k,j,i]+self.f*self.hb[k,j,i]/self.Hi[k])
 
         # transform to get spectral advective flux
         with gil:
@@ -532,6 +536,16 @@ cdef class PseudoSpectralKernel:
             return np.asarray(self.hb)
         def __set__(self, np.ndarray[DTYPE_real_t, ndim=3] hb):
             self.hb = hb
+    property Hi:
+        def __get__(self):
+            return np.asarray(self.Hi)
+        def __set__(self, Hi):
+            self.Hi = Hi
+    property f:
+        def __get__(self):
+            return self.f
+        def __set__(self, f):
+            self.f = f
     property dqhdt:
         def __get__(self):
             return np.asarray(self.dqhdt)

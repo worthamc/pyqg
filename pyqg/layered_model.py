@@ -79,7 +79,7 @@ class LayeredModel(model.Model):
         H = None,                   # layer thickness
         U=None,                     # zonal base state flow
         V=None,                     # meridional base state flow
-        hbot=0.,						# bottom topography
+        hbot=0.,		    		# bottom topography
         rho = None,
         delta = None,
         **kwargs

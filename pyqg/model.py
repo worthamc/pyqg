@@ -678,7 +678,7 @@ class Model(PseudoSpectralKernel):
             DeprecationWarning)
         self.q = q
 
-    def set_hb(self, hb):
-        warnings.warn("Method deprecated. Set model.hb directly instead. ",
-            DeprecationWarning)
-        self.hb = hb
+#     def set_hb(self, hb):
+#         warnings.warn("Method deprecated. Set model.hb directly instead. ",
+#             DeprecationWarning)
+#         self.hb = hb
